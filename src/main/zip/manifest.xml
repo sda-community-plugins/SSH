@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pluginInfo>
+    <author>
+        <name>Micro Focus</name>
+        <email>info@microfocus.com</email>
+        <website>http://www.microfocus.com/</website>
+    </author>
+    <licenses>
+        <license></license>
+    </licenses>
+    <integrationType>Deploy</integrationType>
+    <categories>
+        <category>Scripting</category>
+    </categories>
+    <versions>
+        <version name="1">
+            <releaseNote>
+                The SSH plugin allows users to run remote commands via SSH during the deployment process.
+            </releaseNote>
+        </version>
+    </versions>
+</pluginInfo>

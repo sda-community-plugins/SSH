@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<plugin xmlns="http://www.urbancode.com/PluginXMLSchema_v1">
+    <header>
+        <identifier id="com.serena.air.plugin.SSH" name="SSH" version="1"/>
+        <description>
+            The SSH plugin allows users to run remote commands via SSH during the deployment process.
+        </description>
+        <tag>Scripting/SSH</tag>
+    </header>
+
+    <step-type name="Run Remote Command">
+        <description>This step runs one or more commands on a remote server.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="commands" required="true">
+                <property-ui type="textAreaBox" label="Command"
+                             description="The command(s) to execute on the remote host."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="execCommand.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <step-type name="Upload File">
+        <description>This step uploads a file to a remote server via SCP.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="localFile" required="true">
+                <property-ui type="textBox" label="Local File"
+                             description="The local file to copy to the remote host."/>
+            </property>
+            <property name="remoteDir" required="true">
+                <property-ui type="textBox" label="Remote Directory"
+                             description="The name of the remote directory to copy to on the remote host."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="tmpDirectoryPath" required="false">
+                <property-ui type="textBox" label="Temp Directory" hidden="true"
+                             default-value="/tmp"
+                             description="Path to the temporary directory on remote host."/>
+            </property>
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="postUploadCmd" required="false">
+                <property-ui type="textBox" label="Post Upload Command" hidden="true"
+                             default-value="cp -R %from%/* %to% &amp;&amp; sudo rm -rf %from%"
+                             description="Post upload command to copy from temp directory to target location"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="uploadFile.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <step-type name="Upload Directory">
+        <description>This step uploads a complete directory to a remote server via SCP.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="localDir" required="true">
+                <property-ui type="textBox" label="Local Directory"
+                             description="The local directory to copy to the remote host."/>
+            </property>
+            <property name="remoteDir" required="true">
+                <property-ui type="textBox" label="Remote Directory"
+                             description="The name of the remote directory to copy to on the remote host."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="tmpDirectoryPath" required="false">
+                <property-ui type="textBox" label="Temp Directory" hidden="true"
+                             default-value="/tmp"
+                             description="Path to the temporary directory on remote host."/>
+            </property>
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="postUploadCmd" required="false">
+                <property-ui type="textBox" label="Post Upload Command" hidden="true"
+                             default-value="cp -R %from%/* %to% &amp;&amp; sudo rm -rf %from%"
+                             description="Post upload command to copy from temp directory to target location"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="uploadDirectory.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+
+    <step-type name="Download Remote File">
+        <description>This step download a file from a remote server via SCP.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="remoteFile" required="true">
+                <property-ui type="textBox" label="Remote File"
+                             description="The remote file to download to the local host."/>
+            </property>
+            <property name="localDir" required="true">
+                <property-ui type="textBox" label="Local Directory"
+                             description="The name of the local directory to download to on the local host."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="downloadFile.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <step-type name="Download Remote Directory">
+        <description>This step downloads a complete directory from a remote server via SCP.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="remoteDir" required="true">
+                <property-ui type="textBox" label="Remote Directory"
+                             description="The name of the remote directory to download to the local host."/>
+            </property>
+            <property name="localDir" required="true">
+                <property-ui type="textBox" label="Local Directory"
+                             description="The local directory to download to."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="downloadDirectory.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <step-type name="Create Remote File">
+        <description>This step creates a remote file with the content specified.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="remoteFile" required="true">
+                <property-ui type="textBox" label="Remote File"
+                             description="The name of the remote file to create."/>
+            </property>
+            <property name="fileContent" required="true">
+                <property-ui type="textAreaBox" label="File Content"
+                             description="The content of the file."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="tmpDirectoryPath" required="false">
+                <property-ui type="textBox" label="Temp Directory" hidden="true"
+                             default-value="/tmp"
+                             description="Path to the temporary directory on remote host."/>
+            </property>
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="postUploadCmd" required="false">
+                <property-ui type="textBox" label="Post Upload Command" hidden="true"
+                             default-value="cp -R %from%/* %to% &amp;&amp; sudo rm -rf %from%"
+                             description="Post upload command to copy from temp directory to target location"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="createRemoteFile.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+    <step-type name="Get Remote File Content">
+        <description>This step gets the content of a remote file and sets a property with its value.</description>
+        <properties>
+            <property name="hostAddress" required="true">
+                <property-ui type="textBox" label="Host Address"
+                             description="The address of the remote host to execute the command on."/>
+            </property>
+            <property name="port" required="false">
+                <property-ui type="textBox" label="Port" default-value="22"
+                             description="The port on which the remote SSH server is running."/>
+            </property>
+            <property name="username" required="true">
+                <property-ui type="textBox" label="Username"
+                             description="The username to connect with."/>
+            </property>
+            <property name="remoteFile" required="true">
+                <property-ui type="textBox" label="Remote File"
+                             description="The name of the remote file to get the content of."/>
+            </property>
+            <property name="propertyName" required="true">
+                <property-ui type="textBox" label="Property Name"
+                             description="The name of the property to set with the content of the remote file."/>
+            </property>
+            <property name="password" required="false">
+                <property-ui type="secureBox" label="Password"
+                             description="Password to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="privateKeyFile" required="false">
+                <property-ui type="textBox" label="Private key file"
+                             description="The full path to a private key file to use for authentication. Only one of Password and Private key file is required."/>
+            </property>
+            <property name="passphrase" required="false">
+                <property-ui type="secureBox" label="Passphrase"
+                             description="Optional passphrase for the private key in the private key file."/>
+            </property>
+            <property name="sudo" required="false">
+                <property-ui type="checkBox" label="Use sudo"
+                             description="Use sudo for executing commands"/>
+            </property>
+            <!-- hidden properties -->
+            <property name="tmpDirectoryPath" required="false">
+                <property-ui type="textBox" label="Temp Directory" hidden="true"
+                             default-value="/tmp"
+                             description="Path to the temporary directory on remote host."/>
+            </property>
+            <property name="sudoCommandPrefix" required="false">
+                <property-ui type="textBox" label="Sudo Command Prefix" hidden="true"
+                             default-value="sudo"
+                             description="Sudo command to prefix to the original command, e.g. 'sudo' or 'sudo -u root'"/>
+            </property>
+            <property name="verbose" required="false">
+                <property-ui type="checkBox" label="Verbose Output" hidden="true"
+                             description="Select this option to display verbose output during execution."/>
+            </property>
+            <property name="debug" required="false">
+                <property-ui type="checkBox" label="Debug Output" hidden="true"
+                             description="Select this option to display debug output during execution."/>
+            </property>
+        </properties>
+        <post-processing><![CDATA[
+        if (properties.get("exitCode") != 0) {
+            properties.put("Status", "Failure");
+        }
+        else {
+            properties.put("Status", "Success");
+        }
+     ]]></post-processing>
+
+        <command program="${GROOVY_HOME}/bin/groovy">
+            <arg value="-cp"/>
+            <arg path="classes:lib/SSH.jar"/>
+            <arg value="-Djnp.disableDiscovery=true"/>
+            <arg file="getRemoteFile.groovy"/>
+            <arg file="${PLUGIN_INPUT_PROPS}"/>
+            <arg file="${PLUGIN_OUTPUT_PROPS}"/>
+        </command>
+    </step-type>
+
+</plugin>
