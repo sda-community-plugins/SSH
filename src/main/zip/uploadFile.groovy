@@ -55,7 +55,8 @@ try {
 
     options.setVerbose(verbose)
     options.setSshDebug(debug)
-    options.scpOptions.showProgress = false;
+
+    options.scpOptions.showProgress = true
 
     if (verbose) {
         println ">>> Uploading file ${localFileName} into ${remoteDirName}..."

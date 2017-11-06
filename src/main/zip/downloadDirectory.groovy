@@ -48,7 +48,7 @@ try {
     options.setVerbose(verbose)
     options.setSshDebug(debug)
 
-    options.scpOptions.showProgress = false
+    options.scpOptions.showProgress = true
 
     if (verbose) {
         println ">>> Downloading remote directory ${remoteDirName} into ${localDirName}..."
