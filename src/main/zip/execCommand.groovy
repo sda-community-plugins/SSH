@@ -46,14 +46,13 @@ try {
 
     options.setVerbose(verbose)
     options.setSshDebug(debug)
+    options.reuseConnection = true
 
     def allCmds = SshUtils.toTrimmedList(commands, "\n")
     try {
         remoteSession {
             connect()
-            allCmds.eachWithIndex { cmd, index ->
-                exec cmd
-            }
+            exec(showOutput: true, failOnError: true, command: allCmds.join('\n'))
             disconnect()
         }
     } catch (SshException e) {

@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.aestasit.infrastructure.sshoogr</groupId>
             <artifactId>sshoogr</artifactId>
-            <version>0.9.25</version>
+            <version>0.9.26</version>
         </dependency>
 
         <dependency>
